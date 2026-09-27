@@ -150,7 +150,7 @@ export function computeWeightedPortfolioReturns(series: WeightedReturnSeries[]):
   return returns.sort((left, right) => left.dateKey.localeCompare(right.dateKey));
 }
 
-export function alignedAssetReturns(assetReturns: DatedReturn[], marketReturns: DatedReturn[]): DatedReturn[] {
+function alignedAssetReturns(assetReturns: DatedReturn[], marketReturns: DatedReturn[]): DatedReturn[] {
   const marketIntervals = new Set(marketReturns.filter(validReturnInterval).map(returnIntervalKey));
   return assetReturns.filter((point) => validReturnInterval(point) && marketIntervals.has(returnIntervalKey(point)));
 }
@@ -164,8 +164,4 @@ function alignReturnSeries(assetReturns: DatedReturn[], marketReturns: DatedRetu
 export function computeDatedBeta(assetReturns: DatedReturn[], marketReturns: DatedReturn[]): number | null {
   const aligned = alignReturnSeries(assetReturns, marketReturns);
   return computeBeta(aligned.asset, aligned.market);
-}
-
-export function hasPortfolioPosition(ticker: TickerRecord, portfolioId: string): boolean {
-  return ticker.metadata.positions.some((position) => position.portfolio === portfolioId);
 }

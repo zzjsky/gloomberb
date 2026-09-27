@@ -10,11 +10,13 @@ import type { BrokerAccount, BrokerCashBalance } from "../../../../types/trading
 import { displayWidth, formatCompactAmount, formatPercentRaw } from "../../../../utils/format";
 import { getBrokerInstance } from "../../../../utils/broker-instances";
 import {
+  formatMarginLeverage,
   resolvePortfolioAccountMetrics,
   resolvePortfolioMarketValue,
   resolvePortfolioNetLiquidation,
   type BrokerSnapshotBasis,
 } from "../account-metrics";
+import { isFiniteNumber } from "../../../../utils/guards";
 import { calculatePortfolioSummaryTotals, type PortfolioSummaryTotals } from "./totals";
 import { getMostRecentQuoteUpdate } from "../../../../market-data/quotes/time";
 import { fxStatusLabel, type FxRateStatus } from "../../../../utils/fx-status";
@@ -301,6 +303,9 @@ export function buildPortfolioSummarySegments({
       { text: formatSignedCompact(accountMetrics.realizedPnl), tone: "value", color: priceColor(accountMetrics.realizedPnl), bold: true },
     ])
     : null;
+  const marginLeverage = totals.hasPositions || isFiniteNumber(account.grossPositionValue)
+    ? formatMarginLeverage(netLiquidation, totalMarketValue)
+    : null;
   return [
     ...candidates,
     ...[
@@ -309,6 +314,12 @@ export function buildPortfolioSummarySegments({
       accountValue("avail", "Avail", account.availableFunds),
       accountValue("excess", "Excess", account.excessLiquidity),
       accountValue("bp", "BP", account.buyingPower),
+      marginLeverage
+        ? createSummarySegment("leverage", [
+          { text: "Margin Lev", tone: "label" },
+          { text: marginLeverage, tone: "value", bold: true },
+        ])
+        : null,
       accountValue("init", "Init", account.initMarginReq),
       accountValue("maint", "Maint", account.maintMarginReq),
     ].filter((segment): segment is PortfolioSummarySegment => segment != null),

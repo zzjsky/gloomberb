@@ -23,6 +23,7 @@ const CLOUD_DEFAULT_CONFIG_VERSION = 13;
 const BUILTIN_OWNERSHIP_AND_CHART_CONFIG_VERSION = 20;
 const ONBOARDING_BACKFILL_CONFIG_VERSION = 21;
 const UNREACHABLE_PANE_CLEANUP_CONFIG_VERSION = 22;
+const ANALYTICS_OVERVIEW_RETIRED_CONFIG_VERSION = 23;
 
 interface ConfigMigration {
   name: string;
@@ -56,6 +57,11 @@ const CONFIG_MIGRATIONS: readonly ConfigMigration[] = [
     name: "prune-unreachable-pane-instances",
     toVersion: UNREACHABLE_PANE_CLEANUP_CONFIG_VERSION,
     migrate: migrateUnreachablePaneInstances,
+  },
+  {
+    name: "open-analytics-overview-panes-on-performance",
+    toVersion: ANALYTICS_OVERVIEW_RETIRED_CONFIG_VERSION,
+    migrate: migrateAnalyticsOverviewPanes,
   },
 ];
 
@@ -138,6 +144,29 @@ function migrateUnreachablePaneInstances(
     ...saved,
     layout,
     layouts,
+  };
+}
+
+// The Analytics pane's Overview view is gone. A pane that showed it (any `analyticsView`
+// but "risk", including none) opens on Performance, where its account figures now live.
+function migrateAnalyticsOverviewPanes(saved: Record<string, unknown>): Record<string, unknown> {
+  const migrateLayout = (layout: unknown) => {
+    if (!isRecord(layout) || !Array.isArray(layout.instances)) return layout;
+    return {
+      ...layout,
+      instances: layout.instances.map((instance) => {
+        if (!isRecord(instance) || instance.paneId !== "analytics") return instance;
+        const { analyticsView, ...settings } = isRecord(instance.settings) ? instance.settings : {};
+        return { ...instance, settings: analyticsView === "risk" ? settings : { ...settings, riskView: "performance" } };
+      }),
+    };
+  };
+  return {
+    ...saved,
+    layout: migrateLayout(saved.layout),
+    layouts: Array.isArray(saved.layouts)
+      ? saved.layouts.map((entry) => isRecord(entry) ? { ...entry, layout: migrateLayout(entry.layout) } : entry)
+      : saved.layouts,
   };
 }
 

@@ -529,7 +529,7 @@ export async function buildDesktopShotPayload(
       calculatorSnapshot: { draft, surface } satisfies CalculatorScreenshotSnapshot } };
   } else if (resolved.pane.id === "analytics") {
     const loaded = await loadResolvedHeadlessPaneModel(resolved, context, rawArg);
-    shotInstance = { ...shotInstance, settings: { ...shotInstance.settings, analyticsView: "risk", riskSnapshot: loaded.result.metadata?.model ?? null } };
+    shotInstance = { ...shotInstance, settings: { ...shotInstance.settings, riskSnapshot: loaded.result.metadata?.model ?? null } };
   } else if (isScenarioScreenshot(resolved)) {
     // Freeze the same user inputs and market observations used by the report.
     // A typed strategy with an explicit spot needs no unrelated financials fetch.
